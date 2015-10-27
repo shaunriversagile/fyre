@@ -15,8 +15,6 @@ class TwilioController < ApplicationController
 
     @car_requested = Car.where(stock_id: message_identifier).last
 
-    client = Bitly.client
-
     #SMSLogger.log_text_message from_number, message_identifier
 
     twilio_sid = 'AC06d72653ea2dca08e960c186cd893355'
@@ -52,6 +50,7 @@ class TwilioController < ApplicationController
       @message.message_body.gsub!('#YEAR#', @car_requested.year)
       @message.message_body.gsub!('#MAKE#', @car_requested.make)
       @message.message_body.gsub!('#MODEL#', @car_requested.model)
+      @car_requested.prospects.phone_number = from_number
 
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @car_requested.dealership.phone_number, :body => " \n\nAnother lead from Fyre!  \n\n#{from_number} texted us about the #{@car_requested.year},  #{@car_requested.make} #{@car_requested.model}. You will receive an email update with all of your leads at the end of the day.  \n\nThank you for your business")
