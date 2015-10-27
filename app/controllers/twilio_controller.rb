@@ -47,11 +47,18 @@ class TwilioController < ApplicationController
       # \n\nThank you for contacting the service department at Day Apollo Subaru!\n\n Please follow this link to take advantage of our current specials!  http://bit.ly/1jDgkFe \n\n Also, don't forget to schedule your next visit, with our easy scheduling process! http://bit.ly/1M85nSn
     elsif @car_requested.present?
       @message = @car_requested.dealership_message
-      @message.message_body.gsub!('####', @car_requested.bitly_link)
+      @message.message_body.gsub!('#DEALER#', @car_requested.dealership.name)
+      @message.message_body.gsub!('#LINK#', @car_requested.bitly_link)
+      @message.message_body.gsub!('#YEAR#', @car_requested.year)
+      @message.message_body.gsub!('#MAKE#', @car_requested.make)
+      @message.message_body.gsub!('#MODEL#', @car_requested.model)
+
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @car_requested.dealership.phone_number, :body => " \n\nAnother lead from Fyre!  \n\n#{from_number} texted us about the #{@car_requested.year},  #{@car_requested.make} #{@car_requested.model}. You will receive an email update with all of your leads at the end of the day.  \n\nThank you for your business")
 
       # " \n\nHello from #{@car_requested.dealership.name}!! \n\nThank you for your interest in the #{@car_requested.year}, #{@car_requested.make} #{@car_requested.model}. Follow this link for details and special pricing #{@car_requested.bitly_link}."
+
+      # "\n\nHello from #DEALER#!! \n\nThank you for your interest in the #YEAR#, #MAKE# #MODEL#. Follow this link for details and special pricing #LINK#."
     else
     
         @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => " \n\nHello from Used Car World!! \n\nOoops! We're sorry but your text didn't match any of our cars.  #{message_identifier} was the text that we recieved.  Please check to make sure that there are no extra spaces in your text and that the numbers are correct.  Text HELP if you would like additional help.")
