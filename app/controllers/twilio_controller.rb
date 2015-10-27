@@ -50,7 +50,8 @@ class TwilioController < ApplicationController
       @message.message_body.gsub!('#YEAR#', @car_requested.year)
       @message.message_body.gsub!('#MAKE#', @car_requested.make)
       @message.message_body.gsub!('#MODEL#', @car_requested.model)
-      @car_requested.prospects.phone_number = from_number
+      @prospect = Prospect.new(phone_number: from_number)
+      @car_requested.car_prospects.create(prospect: @prospect)
 
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @car_requested.dealership.phone_number, :body => " \n\nAnother lead from Fyre!  \n\n#{from_number} texted us about the #{@car_requested.year},  #{@car_requested.make} #{@car_requested.model}. You will receive an email update with all of your leads at the end of the day.  \n\nThank you for your business")

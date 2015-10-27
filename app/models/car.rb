@@ -5,6 +5,8 @@ class Car < ActiveRecord::Base
   has_many :car_prospects
   has_many :prospects, through: :car_prospects
 
+  accepts_nested_attributes_for :prospects
+
   before_save :create_bitly_link
 
   def create_bitly_link
