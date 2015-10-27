@@ -1,6 +1,8 @@
-class DealershipMessage < ActiveRecord::Base
+class DealershipResponseMessage < ActiveRecord::Base
   belongs_to :dealership_message
-  belongs_to :dealership_contact
+
+  has_many :dealership_response_contacts
+  has_many :dealership_contacts, through: :dealership_response_contacts
 
   validates_presence_of :message_body
 
