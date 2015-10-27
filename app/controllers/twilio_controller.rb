@@ -29,7 +29,7 @@ class TwilioController < ApplicationController
     if message_identifier.downcase.include? 'problem'
       @message = DealershipMessage.where(:message_code => message_identifier).last
       @dealer_message = @message.dealership_response_message.message_body
-      @dealer_number =   @message.phone_number.nil? ? Dealership.find(@message.dealership_id).phone_number : @message.phone_number
+      @dealer_number =  @dealer_message.dealership_contact.phone_number.nil? ? Dealership.find(@message.dealership_id).phone_number : @dealer_message.dealership_contact.phone_number
 
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @dealer_number, :body => @dealer_message)
@@ -60,11 +60,15 @@ class TwilioController < ApplicationController
 
       # "\n\nHello from #DEALER#!! \n\nThank you for your interest in the #YEAR#, #MAKE# #MODEL#. Follow this link for details and special pricing #LINK#."
     else
-    
-        @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => " \n\nHello from Used Car World!! \n\nOoops! We're sorry but your text didn't match any of our cars.  #{message_identifier} was the text that we recieved.  Please check to make sure that there are no extra spaces in your text and that the numbers are correct.  Text HELP if you would like additional help.")
-        @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => '4124273378', :body => " \n\nAnother lead from Fyre!  \n\nA prospect with the number #{from_number} is on your lot and and texted us about a car but what they sent us doesnt match our records.  Usually this is because somone fat fingered a number or added a space.  Please reach out when you can.\n\nAs always, thank you for your business!")
+      send_error_message(twilio_phone_number, from_number, message_identifier)
     end
 
     render :nothing => true
-  end 
+  end
+
+  private
+
+  def send_error_message(twilio_phone_number, from_number, message_identifier)
+    @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => " \n\nHello from Fyre!! \n\nOoops! We're sorry but your text didn't match any of our expected texts.  #{message_identifier} was the text that we received.  Please check to make sure that there are no extra spaces in your text and that the numbers are correct.")
+  end
 end
