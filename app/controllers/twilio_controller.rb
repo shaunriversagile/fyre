@@ -28,18 +28,22 @@ class TwilioController < ApplicationController
 
     if message_identifier.downcase.include? 'problem'
       @message = DealershipMessage.where(:message_code => message_identifier).last
-      @dealer_message = @message.dealership_response_message.message_body
-      @dealer_number =  @dealer_message.dealership_contact.phone_number.nil? ? Dealership.find(@message.dealership_id).phone_number : @dealer_message.dealership_contact.phone_number
+      if @message.nil?
+        send_error_message(twilio_phone_number, from_number, message_identifier)
+      else
+        @dealer_message = @message.dealership_response_message.message_body
+        @dealer_number =  @dealer_message.dealership_contact.phone_number.nil? ? Dealership.find(@message.dealership_id).phone_number : @dealer_message.dealership_contact.phone_number
 
-      @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
-      @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @dealer_number, :body => @dealer_message)
+        send_message(twilio_phone_number, from_number, @message.message_body)
+        @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @dealer_number, :body => @dealer_message)
+      end
       # " \n\n Unfortunately a customer is not completely satisfied! \n\n No worries, thanks to FYRE it is not too late! Contact #{from_number} asap to rectify any issues or concerns."
 
     elsif message_identifier.downcase.include? 'service'
       @message = DealershipMessage.where(:message_code => message_identifier).last
       @dealer_number = @message.phone_number.nil? ? Dealership.find(@message.dealership_id).phone_number : @message.phone_number
 
-      @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
+      send_message(twilio_phone_number, from_number, @message.message_body)
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @dealer_number, :body => " \n\nAnother service customer has taken advantage of FYRE! \n\n #{from_number} requested your service specials and can now easily schedule their service visit \n\n       A complete list of all customers using this tool will be emailed every Monday am!")
 
       # \n\nThank you for contacting the service department at Day Apollo Subaru!\n\n Please follow this link to take advantage of our current specials!  http://bit.ly/1jDgkFe \n\n Also, don't forget to schedule your next visit, with our easy scheduling process! http://bit.ly/1M85nSn
@@ -53,7 +57,7 @@ class TwilioController < ApplicationController
       @prospect = Prospect.new(phone_number: from_number)
       @car_requested.car_prospects.create(prospect: @prospect)
 
-      @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => @message.message_body)
+      send_message(twilio_phone_number, from_number, @message.message_body)
       @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => @car_requested.dealership.phone_number, :body => " \n\nAnother lead from Fyre!  \n\n#{from_number} texted us about the #{@car_requested.year},  #{@car_requested.make} #{@car_requested.model}. You will receive an email update with all of your leads at the end of the day.  \n\nThank you for your business")
 
       # " \n\nHello from #{@car_requested.dealership.name}!! \n\nThank you for your interest in the #{@car_requested.year}, #{@car_requested.make} #{@car_requested.model}. Follow this link for details and special pricing #{@car_requested.bitly_link}."
@@ -67,6 +71,10 @@ class TwilioController < ApplicationController
   end
 
   private
+
+  def send_message(twilio_phone_number, from_number, message_body)
+    @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => message_body)
+  end
 
   def send_error_message(twilio_phone_number, from_number, message_identifier)
     @twilio_client.account.messages.create(:from => "+1#{twilio_phone_number}", :to => from_number, :body => " \n\nHello from Fyre!! \n\nOoops! We're sorry but your text didn't match any of our expected texts.  #{message_identifier} was the text that we received.  Please check to make sure that there are no extra spaces in your text and that the numbers are correct.")

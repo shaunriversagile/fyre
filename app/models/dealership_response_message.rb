@@ -6,6 +6,8 @@ class DealershipResponseMessage < ActiveRecord::Base
 
   validates_presence_of :message_body
 
+  accepts_nested_attributes_for :dealership_contact
+
   before_save :create_bitly_links
 
   private

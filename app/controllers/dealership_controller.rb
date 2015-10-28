@@ -1,5 +1,7 @@
 class DealershipController < ApplicationController
   def create
+    @dealership = Dealership.new(params[:dealership])
+    @dealership.save
   end
 
   def update
